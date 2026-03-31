@@ -1,0 +1,34 @@
+# ==============================================================================
+# DOCKER COMPOSE - ComfyUI para TITAN
+# ==============================================================================
+# Usa GPU 2 (libre, no usada por vLLM)
+#
+# Para arrancar:
+#   docker compose up -d --build
+#
+# Para ver logs:
+#   docker compose logs -f comfyui
+# ==============================================================================
+
+services:
+  comfyui:
+    build: .
+    container_name: titan-comfyui
+    restart: unless-stopped
+
+    ports:
+      - "8188:8188"
+
+    volumes:
+      - ./models:/app/models
+      - ./output:/app/output
+      - ./input:/app/input
+      - ./custom_nodes:/app/custom_nodes
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["2"]
+              capabilities: [gpu]

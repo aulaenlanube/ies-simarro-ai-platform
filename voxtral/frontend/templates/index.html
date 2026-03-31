@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de texto a audio con IA</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --surface2: #1c1c1c;
+    --border: #272727;
+    --border-hover: #3a3a3a;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --text-dimmer: #4a4a4a;
+    --accent: #6c5ce7;
+    --accent-dim: rgba(108,92,231,0.14);
+    --accent-hover: #8476ec;
+    --green: #00b894;
+    --green-dim: rgba(0,184,148,0.12);
+    --red: #d63031;
+    --red-dim: rgba(214,48,49,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* ── Header ── */
+  header {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.75rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .header-titles h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .header-titles .institute {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+  .header-sep {
+    width: 1px; height: 28px;
+    background: var(--border);
+    margin: 0 0.25rem;
+  }
+  .model-badge {
+    font-size: 0.7rem;
+    color: var(--text-dimmer);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .status-indicator {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.75rem;
+    color: var(--text-dimmer);
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    flex-shrink: 0;
+  }
+  .status-dot.offline {
+    background: #636e72;
+    box-shadow: none;
+  }
+
+  /* ── Sidebar ── */
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dimmer);
+    padding: 0 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+
+  /* Language list */
+  .lang-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 1.5rem;
+  }
+  .lang-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    width: 100%;
+    text-align: left;
+    transition: background 0.13s, color 0.13s;
+  }
+  .lang-item:hover { background: var(--surface2); color: var(--text); }
+  .lang-item.active {
+    background: var(--accent-dim);
+    color: var(--text);
+    font-weight: 600;
+  }
+  .lang-item.active .lang-flag { filter: none; }
+  .lang-flag { font-size: 1.15rem; line-height: 1; flex-shrink: 0; }
+  .lang-name { flex: 1; }
+  .lang-item.active::after {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent-hover);
+    flex-shrink: 0;
+  }
+
+  /* Gender toggle */
+  .gender-section {
+    margin-bottom: 1.5rem;
+  }
+  .gender-toggle {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+    margin-top: 0.6rem;
+  }
+  .gender-btn {
+    flex: 1;
+    padding: 0.45rem 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: background 0.15s, color 0.15s;
+  }
+  .gender-btn.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .gender-btn:not(.active):hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  /* Voice preview badge */
+  .voice-preview {
+    margin-top: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .voice-preview .vp-name {
+    font-family: 'SF Mono','Fira Code',monospace;
+    color: var(--accent-hover);
+    font-size: 0.8rem;
+  }
+
+  /* Custom voices */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1rem 0;
+  }
+  .custom-voice-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    width: 100%;
+    text-align: left;
+    transition: background 0.13s, color 0.13s;
+  }
+  .custom-voice-item:hover { background: var(--surface2); color: var(--text); }
+  .custom-voice-item.active {
+    background: var(--green-dim);
+    color: var(--text);
+    font-weight: 600;
+  }
+  .cv-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+  .cv-del {
+    margin-left: auto;
+    padding: 1px 5px;
+    font-size: 0.7rem;
+    background: transparent;
+    border: none;
+    color: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: color 0.13s;
+  }
+  .custom-voice-item:hover .cv-del { color: var(--text-dimmer); }
+  .cv-del:hover { color: var(--red) !important; }
+
+  /* ── Main ── */
+  main {
+    padding: 1.75rem 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 760px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+  .card-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dimmer);
+    margin-bottom: 1rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+  }
+  textarea, input[type=text], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.93rem;
+    padding: 0.65rem 0.85rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input[type=text]:focus, select:focus {
+    border-color: var(--border-hover);
+  }
+  textarea { resize: vertical; min-height: 130px; line-height: 1.65; }
+  select { cursor: pointer; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group:last-child { margin-bottom: 0; }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .speed-wrapper { display: flex; align-items: center; gap: 0.65rem; }
+  .speed-label { font-size: 0.8rem; color: var(--text-dimmer); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+  }
+  .tab {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.13s, border-color 0.13s;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--text);
+  }
+  .drop-zone input[type=file] { display: none; }
+  .drop-zone .dz-icon { font-size: 1.75rem; display: block; margin-bottom: 0.4rem; }
+  .dz-filename { font-size: 0.78rem; color: var(--green); margin-top: 0.4rem; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 7px; border: none;
+    font-size: 0.875rem; font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.13s, background 0.13s;
+  }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-secondary {
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover:not(:disabled) { background: var(--border-hover); }
+  .btn-generate { width: 100%; padding: 0.8rem; font-size: 0.95rem; justify-content: center; }
+
+  /* Status */
+  .status-bar {
+    font-size: 0.83rem; color: var(--text-dim);
+    min-height: 1.1rem;
+    display: flex; align-items: center; gap: 0.45rem;
+  }
+  .status-bar.error { color: var(--red); }
+  .status-bar.success { color: var(--green); }
+
+  .spinner {
+    width: 13px; height: 13px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Audio card */
+  .audio-card { display: none; animation: fadeUp 0.25s ease; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(6px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  audio { width: 100%; border-radius: 6px; }
+  .audio-actions { display: flex; gap: 0.6rem; margin-top: 0.85rem; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.7rem 1rem;
+    font-size: 0.83rem; color: var(--text);
+    display: flex; align-items: center; gap: 0.5rem;
+    z-index: 100; max-width: 300px;
+    animation: slideIn 0.2s ease;
+  }
+  .toast.success { border-color: rgba(0,184,148,0.35); color: var(--green); }
+  .toast.error { border-color: rgba(214,48,49,0.35); color: var(--red); }
+  @keyframes slideIn {
+    from { opacity:0; transform:translateX(16px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+
+  /* Footer */
+  footer {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 0.6rem 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-dimmer);
+  }
+  footer .footer-sep { color: var(--border); }
+
+  @media (max-width: 680px) {
+    body { grid-template-columns: 1fr; }
+    aside { display: none; }
+    main { padding: 1rem; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-titles">
+    <h1>Generador de texto a audio con IA</h1>
+    <span class="institute">IES Dr. Lluís Simarro &mdash; Centro de excelencia en IA y Big Data</span>
+  </div>
+  <div class="header-sep"></div>
+  <span class="model-badge">Voxtral-4B-TTS</span>
+  <div class="status-indicator">
+    <span id="status-dot" class="status-dot offline"></span>
+    <span id="status-text">Conectando...</span>
+  </div>
+</header>
+
+<!-- ── Sidebar ── -->
+<aside>
+
+  <div class="sidebar-label">Idioma</div>
+  <div class="lang-list" id="lang-list">
+    <!-- injected by JS -->
+  </div>
+
+  <div class="gender-section">
+    <div class="sidebar-label">Voz</div>
+    <div class="gender-toggle">
+      <button class="gender-btn active" id="btn-male" onclick="setGender('male')">
+        &#9794; Hombre
+      </button>
+      <button class="gender-btn" id="btn-female" onclick="setGender('female')">
+        &#9792; Mujer
+      </button>
+    </div>
+  </div>
+
+  <div class="voice-preview" id="voice-preview">
+    <span>&#127908;</span>
+    <span>Voz activa:</span>
+    <span class="vp-name" id="voice-preview-name">casual_male</span>
+  </div>
+
+  <!-- Custom voices -->
+  <div class="divider"></div>
+  <div class="sidebar-label" style="display:flex;align-items:center;justify-content:space-between;">
+    Mis voces
+    <span id="custom-voices-count" style="font-size:0.65rem;color:var(--text-dimmer)"></span>
+  </div>
+  <div id="custom-voices-list">
+    <div style="font-size:0.78rem;color:var(--text-dimmer);padding:0.3rem 0.4rem;">Sin voces guardadas</div>
+  </div>
+
+</aside>
+
+<!-- ── Main ── -->
+<main>
+
+  <!-- Text card -->
+  <div class="card">
+    <div class="card-title">Texto de entrada</div>
+    <div class="form-group">
+      <textarea id="text" placeholder="Escribe el texto que quieres convertir a voz...&#10;Ctrl + Enter para generar"></textarea>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="settings">Ajustes</button>
+      <button class="tab" data-tab="cloning">Clonar voz</button>
+    </div>
+
+    <!-- Settings -->
+    <div id="tab-settings" class="tab-content active">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="format">Formato de salida</label>
+          <select id="format">
+            <option value="wav" selected>WAV — sin pérdida</option>
+            <option value="mp3">MP3</option>
+            <option value="flac">FLAC</option>
+            <option value="opus">Opus</option>
+            <option value="aac">AAC</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Velocidad &mdash; <span id="speed-display">1.00x</span></label>
+          <div class="speed-wrapper" style="margin-top:0.55rem;">
+            <span class="speed-label">0.5</span>
+            <input type="range" id="speed" min="0.5" max="2.0" step="0.05" value="1.0">
+            <span class="speed-label">2.0</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="instructions">Instrucciones de estilo <span style="color:var(--text-dimmer)">(opcional)</span></label>
+        <input type="text" id="instructions" placeholder="Ej: Habla con tono profesional y pausado">
+      </div>
+    </div>
+
+    <!-- Cloning -->
+    <div id="tab-cloning" class="tab-content">
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:1rem;line-height:1.55;">
+        Sube un audio de referencia (3&ndash;30 seg) para generar con esa voz.
+        Puedes guardarlo como voz reutilizable.
+      </p>
+      <div class="form-group">
+        <label>Audio de referencia</label>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('ref-file').click()">
+          <input type="file" id="ref-file" accept="audio/*">
+          <span class="dz-icon">&#127908;</span>
+          <div>Haz clic o arrastra un archivo de audio</div>
+          <div style="font-size:0.73rem;margin-top:0.2rem;color:var(--text-dimmer)">WAV &middot; MP3 &middot; FLAC &middot; OGG</div>
+          <div id="dz-filename" class="dz-filename"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="ref-text">Transcripción <span style="color:var(--text-dimmer)">(opcional, mejora la calidad)</span></label>
+        <input type="text" id="ref-text" placeholder="Lo que dice el audio de referencia...">
+      </div>
+      <div style="padding-top:0.85rem;border-top:1px solid var(--border);">
+        <label style="margin-bottom:0.5rem;">Guardar voz en biblioteca</label>
+        <div style="display:flex;gap:0.65rem;align-items:center;">
+          <input type="text" id="voice-save-name" placeholder="Nombre (ej: voz_alumno)" style="flex:1;">
+          <button class="btn btn-secondary" onclick="saveVoice()" id="save-voice-btn">Guardar</button>
+        </div>
+        <div id="save-voice-status" class="status-bar" style="margin-top:0.4rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate -->
+  <button id="generate-btn" class="btn btn-primary btn-generate" onclick="generate()">
+    Generar audio
+  </button>
+  <div id="gen-status" class="status-bar"></div>
+
+  <!-- Audio output -->
+  <div id="audio-card" class="card audio-card">
+    <div class="card-title">Audio generado</div>
+    <audio id="audio-player" controls></audio>
+    <div class="audio-actions">
+      <a id="download-link" class="btn btn-secondary" download="speech.wav">&#8681; Descargar</a>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Footer ── -->
+<footer>
+  <span>IES Dr. Lluís Simarro</span>
+  <span class="footer-sep">&mdash;</span>
+  <span>Centro de excelencia en IA y Big Data</span>
+  <span class="footer-sep" style="margin-left:auto;">&mdash;</span>
+  <span>mistralai/Voxtral-4B-TTS-2603</span>
+</footer>
+
+<div id="toast-container"></div>
+
+<script>
+// ── Language / voice map ──────────────────────────────────────────────────────
+const LANGUAGES = [
+  { key: 'casual',    flag: '&#127760;', name: 'Casual'     },
+  { key: 'neutral',   flag: '&#127760;', name: 'Neutral'    },
+  { key: 'cheerful',  flag: '&#127881;', name: 'Alegre'     },
+  { key: 'es',        flag: '&#127466;&#127480;', name: 'Español'  },
+  { key: 'fr',        flag: '&#127467;&#127479;', name: 'Français' },
+  { key: 'de',        flag: '&#127465;&#127466;', name: 'Deutsch'  },
+  { key: 'it',        flag: '&#127470;&#127481;', name: 'Italiano' },
+  { key: 'pt',        flag: '&#127477;&#127481;', name: 'Português'},
+  { key: 'nl',        flag: '&#127475;&#127473;', name: 'Nederlands'},
+  { key: 'hi',        flag: '&#127470;&#127475;', name: 'Hindi'    },
+  { key: 'ar',        flag: '&#127462;&#127479;', name: 'عربي'     },
+];
+
+// Voices that only have one gender available
+const MALE_ONLY = new Set(['ar']);
+const FEMALE_ONLY = new Set(['cheerful']);
+
+let selectedLang = 'casual';
+let selectedGender = 'male';
+let selectedVoice = 'casual_male';
+let usingCustomVoice = false;
+
+let refAudioBase64 = null;
+let refAudioFilename = '';
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  buildLangList();
+  await loadVoices();
+  checkBackend();
+}
+
+function buildLangList() {
+  const list = document.getElementById('lang-list');
+  list.innerHTML = LANGUAGES.map(l => `
+    <button class="lang-item${l.key === selectedLang ? ' active' : ''}"
+            id="lang-${l.key}" onclick="selectLang('${l.key}')">
+      <span class="lang-flag">${l.flag}</span>
+      <span class="lang-name">${l.name}</span>
+    </button>`).join('');
+}
+
+function selectLang(key) {
+  selectedLang = key;
+  usingCustomVoice = false;
+  document.querySelectorAll('.lang-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('lang-' + key);
+  if (el) el.classList.add('active');
+
+  // Auto-adjust gender if this lang doesn't have both
+  if (MALE_ONLY.has(key)) setGender('male', false);
+  else if (FEMALE_ONLY.has(key)) setGender('female', false);
+
+  updateVoice();
+}
+
+function setGender(g, updateVoice_ = true) {
+  selectedGender = g;
+  document.getElementById('btn-male').classList.toggle('active', g === 'male');
+  document.getElementById('btn-female').classList.toggle('active', g === 'female');
+  usingCustomVoice = false;
+  if (updateVoice_) updateVoice();
+}
+
+function updateVoice() {
+  // Build voice name: {lang}_{gender}
+  // Special case: cheerful only has female
+  let gender = selectedGender;
+  if (MALE_ONLY.has(selectedLang)) gender = 'male';
+  if (FEMALE_ONLY.has(selectedLang)) gender = 'female';
+  selectedVoice = selectedLang + '_' + gender;
+  document.getElementById('voice-preview-name').textContent = selectedVoice;
+}
+
+async function checkBackend() {
+  try {
+    const r = await fetch('/api/voices');
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    if (r.ok) {
+      dot.classList.remove('offline');
+      txt.textContent = 'Online';
+    } else {
+      txt.textContent = 'Error';
+    }
+  } catch {
+    document.getElementById('status-text').textContent = 'Sin conexión';
+  }
+}
+
+async function loadVoices() {
+  try {
+    const r = await fetch('/api/voices');
+    if (!r.ok) return;
+    const data = await r.json();
+    const custom = data.uploaded_voices || [];
+    const countEl = document.getElementById('custom-voices-count');
+    const listEl = document.getElementById('custom-voices-list');
+    countEl.textContent = custom.length ? `(${custom.length})` : '';
+    if (custom.length === 0) {
+      listEl.innerHTML = '<div style="font-size:0.78rem;color:var(--text-dimmer);padding:0.3rem 0.4rem;">Sin voces guardadas</div>';
+    } else {
+      listEl.innerHTML = custom.map(v => `
+        <button class="custom-voice-item${selectedVoice === v && usingCustomVoice ? ' active' : ''}"
+                id="cvbtn-${v}" onclick="selectCustomVoice('${v}')">
+          <span class="cv-dot"></span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v}</span>
+          <button class="cv-del" onclick="deleteVoice(event,'${v}')" title="Eliminar">&#10005;</button>
+        </button>`).join('');
+    }
+  } catch {}
+}
+
+function selectCustomVoice(name) {
+  selectedVoice = name;
+  usingCustomVoice = true;
+  // Deselect language buttons
+  document.querySelectorAll('.lang-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.custom-voice-item').forEach(el => el.classList.remove('active'));
+  const btn = document.getElementById('cvbtn-' + name);
+  if (btn) btn.classList.add('active');
+  document.getElementById('voice-preview-name').textContent = name;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Speed ─────────────────────────────────────────────────────────────────────
+document.getElementById('speed').addEventListener('input', function() {
+  document.getElementById('speed-display').textContent = parseFloat(this.value).toFixed(2) + 'x';
+});
+
+// ── Drop zone ─────────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const refInput = document.getElementById('ref-file');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleRefFile(e.dataTransfer.files[0]);
+});
+refInput.addEventListener('change', () => {
+  if (refInput.files[0]) handleRefFile(refInput.files[0]);
+});
+
+function handleRefFile(file) {
+  refAudioFilename = file.name;
+  document.getElementById('dz-filename').innerHTML = '&#10003; ' + file.name;
+  const reader = new FileReader();
+  reader.onload = e => { refAudioBase64 = e.target.result.split(',')[1]; };
+  reader.readAsDataURL(file);
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+async function generate() {
+  const text = document.getElementById('text').value.trim();
+  if (!text) { showToast('Escribe un texto primero', 'error'); return; }
+
+  const btn = document.getElementById('generate-btn');
+  const statusEl = document.getElementById('gen-status');
+  const audioCard = document.getElementById('audio-card');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generando...';
+  statusEl.className = 'status-bar';
+  statusEl.innerHTML = '';
+  audioCard.style.display = 'none';
+
+  const fmt = document.getElementById('format').value;
+  const body = {
+    text,
+    voice: selectedVoice,
+    format: fmt,
+    speed: parseFloat(document.getElementById('speed').value),
+  };
+
+  const instructions = document.getElementById('instructions').value.trim();
+  if (instructions) body.instructions = instructions;
+
+  if (refAudioBase64) {
+    body.ref_audio = refAudioBase64;
+    const refText = document.getElementById('ref-text').value.trim();
+    if (refText) body.ref_text = refText;
+  }
+
+  try {
+    const res = await fetch('/api/synthesize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
+      throw new Error(err.error || 'Error del servidor');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const player = document.getElementById('audio-player');
+    const dl = document.getElementById('download-link');
+    player.src = url;
+    dl.href = url;
+    dl.download = 'speech.' + fmt;
+    audioCard.style.display = 'block';
+    player.play();
+  } catch (e) {
+    statusEl.className = 'status-bar error';
+    statusEl.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Generar audio';
+  }
+}
+
+// ── Save voice ────────────────────────────────────────────────────────────────
+async function saveVoice() {
+  const name = document.getElementById('voice-save-name').value.trim();
+  if (!name) { showToast('Introduce un nombre para la voz', 'error'); return; }
+  if (!refAudioBase64) { showToast('Sube un audio de referencia primero', 'error'); return; }
+
+  const statusEl = document.getElementById('save-voice-status');
+  const btn = document.getElementById('save-voice-btn');
+  btn.disabled = true;
+  statusEl.textContent = 'Subiendo...';
+  statusEl.className = 'status-bar';
+
+  const byteStr = atob(refAudioBase64);
+  const ab = new ArrayBuffer(byteStr.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+  const blob = new Blob([ab], { type: 'audio/wav' });
+
+  const fd = new FormData();
+  fd.append('audio_sample', blob, refAudioFilename || 'ref.wav');
+  fd.append('name', name);
+  const refText = document.getElementById('ref-text').value.trim();
+  if (refText) fd.append('ref_text', refText);
+
+  try {
+    const r = await fetch('/api/voices/upload', { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error al subir');
+    statusEl.textContent = '';
+    showToast(`Voz "${name}" guardada`, 'success');
+    await loadVoices();
+    selectCustomVoice(name);
+  } catch (e) {
+    statusEl.className = 'status-bar error';
+    statusEl.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Delete voice ──────────────────────────────────────────────────────────────
+async function deleteVoice(e, name) {
+  e.stopPropagation();
+  if (!confirm(`¿Eliminar la voz "${name}"?`)) return;
+  try {
+    const r = await fetch('/api/voices/' + encodeURIComponent(name), { method: 'DELETE' });
+    if (!r.ok) throw new Error('Error al eliminar');
+    if (selectedVoice === name) { selectedVoice = 'casual_male'; usingCustomVoice = false; updateVoice(); selectLang('casual'); }
+    showToast(`Voz "${name}" eliminada`);
+    await loadVoices();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = '') {
+  clearTimeout(toastTimer);
+  const c = document.getElementById('toast-container');
+  c.innerHTML = `<div class="toast${type ? ' '+type : ''}">${msg}</div>`;
+  toastTimer = setTimeout(() => c.innerHTML = '', 3200);
+}
+
+// ── Shortcuts ─────────────────────────────────────────────────────────────────
+document.getElementById('text').addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') generate();
+});
+
+init();
+</script>
+</body>
+</html>

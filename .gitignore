@@ -1,0 +1,79 @@
+# ── Modelos de IA (archivos grandes) ──────────────────────────────────────────
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.gguf
+*.ggml
+*.pkl
+*.msgpack
+
+# ── Salidas generadas ─────────────────────────────────────────────────────────
+# Imágenes
+comfyui/output/**/*.png
+comfyui/output/**/*.jpg
+comfyui/output/**/*.jpeg
+comfyui/output/**/*.webp
+comfyui/output/**/*.bmp
+comfyui/output/**/*.tiff
+# Vídeos
+comfyui/output/**/*.mp4
+comfyui/output/**/*.webm
+comfyui/output/**/*.avi
+comfyui/output/**/*.mov
+comfyui/output/**/*.mkv
+# Audio generado
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.aac
+*.opus
+
+# ── Entradas de usuario ───────────────────────────────────────────────────────
+comfyui/input/*.png
+comfyui/input/*.jpg
+comfyui/input/*.jpeg
+comfyui/input/*.webp
+comfyui/input/**/*.png
+comfyui/input/**/*.jpg
+comfyui/input/**/*.jpeg
+
+# ── Directorios de ejecución ──────────────────────────────────────────────────
+voxtral/venv/
+comfyui/storage/
+build/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+*.log.*
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+*.egg
+
+# ── Node / JS ─────────────────────────────────────────────────────────────────
+node_modules/
+.npm/
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+.docker/
+
+# ── Sistema / IDE ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.env
+.env.*
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ── Claude Code ──────────────────────────────────────────────────────────────
+.claude/
