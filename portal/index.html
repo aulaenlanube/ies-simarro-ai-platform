@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ca" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IES Dr. Lluís Simarro — Plataforma IA</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:        #0e0f11;
+  --surface:   #15171a;
+  --surface2:  #1c1e22;
+  --border:    #26292f;
+  --text:      #e8eaed;
+  --text-dim:  #7c8290;
+  --text-xs:   #484e5c;
+  --accent:    #4f7ef7;
+  --accent-g:  #00b894;
+  --accent-o:  #e07055;
+  --logo-filter: invert(1) brightness(0.8);
+  --img-opacity: 0.18;
+  --shadow: 0 2px 16px rgba(0,0,0,0.4);
+}
+
+[data-theme="light"] {
+  --bg:        #f4f5f7;
+  --surface:   #ffffff;
+  --surface2:  #eef0f4;
+  --border:    #dde0e8;
+  --text:      #111318;
+  --text-dim:  #5a6070;
+  --text-xs:   #9aa0b2;
+  --logo-filter: none;
+  --img-opacity: 0.22;
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.2s, color 0.2s;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('edificio-simarro.webp');
+  background-size: cover;
+  background-position: center 55%;
+  background-repeat: no-repeat;
+  opacity: 0.06;
+  filter: grayscale(100%);
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.2s;
+}
+[data-theme="light"] body::before { opacity: 0.08; }
+
+body > * { position: relative; z-index: 1; }
+
+/* ── Header ── */
+header {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  gap: 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  height: 30px;
+  width: auto;
+  filter: var(--logo-filter);
+  transition: filter 0.2s;
+  flex-shrink: 0;
+}
+
+.h-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+}
+
+.h-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.h-sub {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.h-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Language toggle */
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+.lang-toggle .lang-label { transition: color 0.2s; }
+.lang-toggle .lang-label.active { color: var(--text); }
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.toggle-track:hover { border-color: var(--text-xs); }
+.toggle-thumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+}
+.toggle-thumb.right { transform: translateX(16px); }
+
+/* Theme button */
+.theme-btn {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-xs);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.theme-btn:hover { background: var(--surface2); color: var(--text); }
+.theme-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+
+/* ── Content ── */
+.content {
+  flex: 1;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* ── Identity block ── */
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.id-top {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.building-img { display: none; }
+.building-banner { display: none; }
+
+.id-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.id-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-xs);
+}
+
+.id-h1 {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.id-desc {
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  line-height: 1.65;
+  max-width: 480px;
+}
+
+/* ── Section label ── */
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-xs);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Cards ── */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s, transform 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--c-accent);
+  transform: scaleX(0);
+  transition: transform 0.2s;
+  transform-origin: left;
+}
+.card:hover { border-color: var(--border); transform: translateY(-2px); }
+.card:hover::after { transform: scaleX(1); }
+
+.card--gpt { --c-accent: #4f7ef7; }
+.card--tts { --c-accent: #00b894; }
+.card--img { --c-accent: #e07055; }
+
+.card-icon {
+  font-size: 1.3rem;
+  width: 40px; height: 40px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+
+.card-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.card-port {
+  font-size: 0.68rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-xs);
+  margin-top: 1px;
+}
+
+.card-desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-xs);
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.dot.online  { background: #00b894; box-shadow: 0 0 5px #00b894; }
+.dot.offline { background: #d63031; }
+
+.card-arrow {
+  font-size: 0.8rem;
+  color: var(--text-xs);
+  transition: transform 0.18s, color 0.18s;
+}
+.card:hover .card-arrow { transform: translateX(3px); color: var(--c-accent); }
+
+/* ── PP1 link ── */
+.pp1-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s, transform 0.18s;
+}
+.pp1-link:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+.pp1-icon {
+  font-size: 1.2rem;
+  width: 40px; height: 40px;
+  border-radius: 9px;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.pp1-body { flex: 1; }
+.pp1-body strong {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+.pp1-body span {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+.pp1-url {
+  font-size: 0.68rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* ── Footer ── */
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 0.9rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+  color: var(--text-xs);
+  flex-wrap: wrap;
+}
+footer img {
+  height: 18px;
+  filter: var(--logo-filter);
+  opacity: 0.5;
+  transition: filter 0.2s;
+}
+footer .fsep { color: var(--border); }
+footer a { color: var(--text-xs); text-decoration: none; }
+footer a:hover { color: var(--accent); }
+
+@media (max-width: 680px) {
+  .cards { grid-template-columns: 1fr; }
+  header { padding: 0 1rem; }
+  .h-sub, .h-sep { display: none; }
+  .content { padding: 2rem 1rem 3rem; }
+  .pp1-url { display: none; }
+  .building-banner { height: 100px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo-simarro.webp" alt="IES Dr. Lluís Simarro" class="logo">
+  <div class="h-sep"></div>
+  <div>
+    <div class="h-title" data-t="header.title">Plataforma d'IA</div>
+    <div class="h-sub" data-t="header.sub">Centre d'excel·lència en IA i Big Data</div>
+  </div>
+  <div class="h-actions">
+    <div class="lang-toggle" onclick="toggleLang()">
+      <span class="lang-label active" id="lbl-ca">VAL</span>
+      <div class="toggle-track">
+        <div class="toggle-thumb" id="lang-thumb"></div>
+      </div>
+      <span class="lang-label" id="lbl-es">CAS</span>
+    </div>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Canviar tema">
+      <!-- icon swapped by JS -->
+    </button>
+  </div>
+</header>
+
+<div class="content">
+
+  <!-- Identity -->
+  <div class="identity">
+    <div class="id-text">
+      <div class="id-tag" data-t="id.tag">IES Dr. Lluís Simarro · Xàtiva · PP1</div>
+      <h1 class="id-h1" data-t="id.h1">Eines d'Intel·ligència Artificial</h1>
+      <p class="id-desc" data-t="id.desc">Accedeix als serveis d'IA disponibles al servidor del centre. Tots els models s'executen localment.</p>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <div>
+    <div class="section-label" data-t="section.services">Serveis</div>
+    <div class="cards">
+
+      <a href="#" data-port="3000" target="_blank" class="card card--gpt">
+        <div class="card-icon">🤖</div>
+        <div>
+          <div class="card-name">SimarroGPT</div>
+          <div class="card-port">localhost:3000</div>
+        </div>
+        <p class="card-desc" data-t="card.gpt.desc">Assistent conversacional basat en Qwen3.5. Respon preguntes i ajuda amb tasques de text.</p>
+        <div class="card-footer">
+          <div class="status">
+            <span class="dot" id="dot-3000"></span>
+            <span id="st-3000" data-t="st.checking">Comprovant...</span>
+          </div>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="#" data-port="3100" target="_blank" class="card card--tts">
+        <div class="card-icon">🎙️</div>
+        <div>
+          <div class="card-name" data-t="card.tts.name">Text a Àudio</div>
+          <div class="card-port">localhost:3100</div>
+        </div>
+        <p class="card-desc" data-t="card.tts.desc">Converteix text a veu amb Voxtral-4B-TTS. 20 veus en múltiples idiomes i clonació de veu.</p>
+        <div class="card-footer">
+          <div class="status">
+            <span class="dot" id="dot-3100"></span>
+            <span id="st-3100" data-t="st.checking">Comprovant...</span>
+          </div>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="#" data-port="8188" target="_blank" class="card card--img">
+        <div class="card-icon">🎨</div>
+        <div>
+          <div class="card-name" data-t="card.img.name">Imatges i Vídeos</div>
+          <div class="card-port">localhost:8188</div>
+        </div>
+        <p class="card-desc" data-t="card.img.desc">Generació i edició d'imatges i vídeos amb ComfyUI. Models LTX Video 2.3 i Qwen Image Edit.</p>
+        <div class="card-footer">
+          <div class="status">
+            <span class="dot" id="dot-8188"></span>
+            <span id="st-8188" data-t="st.checking">Comprovant...</span>
+          </div>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- PP1 -->
+  <div>
+    <div class="section-label" data-t="section.project">Projecte</div>
+    <a href="https://aulaenlanube.com/pp1-simarro/web/index.html" target="_blank" class="pp1-link">
+      <div class="pp1-icon">📚</div>
+      <div class="pp1-body">
+        <strong data-t="pp1.title">Documentació del Projecte PP1</strong>
+        <span data-t="pp1.sub">Seguiment, memòria tècnica i resultats del projecte de pràctiques professionals.</span>
+      </div>
+      <span class="pp1-url">aulaenlanube.com/pp1-simarro</span>
+    </a>
+  </div>
+
+
+</div>
+
+<footer>
+  <img src="logo-simarro.webp" alt="">
+  <span class="fsep">—</span>
+  <span data-t="footer.text">IES Dr. Lluís Simarro · Ensenyament Públic · Xàtiva</span>
+  <span class="fsep" style="margin-left:auto">—</span>
+  <a href="https://aulaenlanube.com/pp1-simarro/web/index.html" target="_blank" data-t="footer.pp1">Projecte PP1</a>
+</footer>
+
+<script>
+// ── Dynamic service URLs ──────────────────────────────────────────────────────
+// Use the same hostname the user accessed the portal with, so remote
+// connections resolve to the server, not the client's localhost.
+const HOST = window.location.hostname;
+
+document.querySelectorAll('[data-port]').forEach(el => {
+  const port = el.getAttribute('data-port');
+  el.href = `http://${HOST}:${port}/`;
+});
+
+const T = {
+  ca: {
+    'header.title':    "Plataforma d'IA",
+    'header.sub':      "Centre d'excel·lència en IA i Big Data",
+    'id.tag':          'IES Dr. Lluís Simarro · Xàtiva · PP1',
+    'id.h1':           "Eines d'Intel·ligència Artificial",
+    'id.desc':         "Accedeix als serveis d'IA disponibles al servidor del centre. Tots els models s'executen localment.",
+    'section.services':'Serveis',
+    'card.gpt.desc':   'Assistent conversacional basat en Qwen3.5. Respon preguntes i ajuda amb tasques de text.',
+    'card.tts.name':   'Text a Àudio',
+    'card.tts.desc':   'Converteix text a veu amb Voxtral-4B-TTS. 20 veus en múltiples idiomes i clonació de veu.',
+    'card.img.name':   'Imatges i Vídeos',
+    'card.img.desc':   "Generació i edició d'imatges i vídeos amb ComfyUI. Models LTX Video 2.3 i Qwen Image Edit.",
+    'st.checking':     'Comprovant...',
+    'st.online':       'En línia',
+    'st.offline':      'No disponible',
+    'section.project': 'Projecte',
+    'pp1.title':       'Documentació del Projecte PP1',
+    'pp1.sub':         'Seguiment, memòria tècnica i resultats del projecte de pràctiques professionals.',
+    'footer.text':     'IES Dr. Lluís Simarro · Ensenyament Públic · Xàtiva',
+    'footer.pp1':      'Projecte PP1',
+  },
+  es: {
+    'header.title':    'Plataforma de IA',
+    'header.sub':      'Centro de excelencia en IA y Big Data',
+    'id.tag':          'IES Dr. Lluís Simarro · Xàtiva · PP1',
+    'id.h1':           'Herramientas de Inteligencia Artificial',
+    'id.desc':         'Accede a los servicios de IA disponibles en el servidor del centro. Todos los modelos se ejecutan localmente.',
+    'section.services':'Servicios',
+    'card.gpt.desc':   'Asistente conversacional basado en Qwen3.5. Responde preguntas y ayuda con tareas de texto.',
+    'card.tts.name':   'Texto a Audio',
+    'card.tts.desc':   'Convierte texto a voz con Voxtral-4B-TTS. 20 voces en múltiples idiomas y clonación de voz.',
+    'card.img.name':   'Imágenes y Vídeos',
+    'card.img.desc':   'Generación y edición de imágenes y vídeos con ComfyUI. Modelos LTX Video 2.3 y Qwen Image Edit.',
+    'st.checking':     'Comprobando...',
+    'st.online':       'En línea',
+    'st.offline':      'No disponible',
+    'section.project': 'Proyecto',
+    'pp1.title':       'Documentación del Proyecto PP1',
+    'pp1.sub':         'Seguimiento, memoria técnica y resultados del proyecto de prácticas profesionales.',
+    'footer.text':     'IES Dr. Lluís Simarro · Enseñanza Pública · Xàtiva',
+    'footer.pp1':      'Proyecto PP1',
+  }
+};
+
+const MOON_SVG = `<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>`;
+const SUN_SVG  = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
+let lang  = localStorage.getItem('lang')  || 'ca';
+let theme = localStorage.getItem('theme') || 'dark';
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.documentElement.setAttribute('lang', l);
+  // toggle slider
+  const thumb = document.getElementById('lang-thumb');
+  const lblCa = document.getElementById('lbl-ca');
+  const lblEs = document.getElementById('lbl-es');
+  thumb.classList.toggle('right', l === 'es');
+  lblCa.classList.toggle('active', l === 'ca');
+  lblEs.classList.toggle('active', l === 'es');
+  // apply translations
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const v = T[l][el.getAttribute('data-t')];
+    if (v) el.textContent = v;
+  });
+  ['3000','3100','8188'].forEach(p => {
+    const el = document.getElementById('st-' + p);
+    if (el && el.dataset.state) el.textContent = T[l]['st.' + el.dataset.state] || '';
+  });
+}
+
+function toggleLang() {
+  setLang(lang === 'ca' ? 'es' : 'ca');
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-btn').innerHTML = theme === 'dark' ? MOON_SVG : SUN_SVG;
+}
+
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', theme);
+  applyTheme();
+}
+
+async function checkPort(port) {
+  const dot = document.getElementById('dot-' + port);
+  const txt = document.getElementById('st-' + port);
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 4000);
+    await fetch(`http://${HOST}:${port}/`, { signal: ctrl.signal, mode: 'no-cors' });
+    dot.className = 'dot online';
+    txt.dataset.state = 'online';
+    txt.textContent = T[lang]['st.online'];
+  } catch {
+    dot.className = 'dot offline';
+    txt.dataset.state = 'offline';
+    txt.textContent = T[lang]['st.offline'];
+  }
+}
+
+// Init
+applyTheme();
+setLang(lang);
+['3000','3100','8188'].forEach(checkPort);
+setInterval(() => ['3000','3100','8188'].forEach(checkPort), 30000);
+</script>
+</body>
+</html>

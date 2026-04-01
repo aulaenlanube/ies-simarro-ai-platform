@@ -1,0 +1,12 @@
+services:
+  portal:
+    image: nginx:alpine
+    container_name: titan-portal
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./logo-simarro.webp:/usr/share/nginx/html/logo-simarro.webp:ro
+      - ./edificio-simarro.webp:/usr/share/nginx/html/edificio-simarro.webp:ro
