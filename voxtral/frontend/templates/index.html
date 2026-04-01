@@ -500,7 +500,14 @@
 
       <!-- Record -->
       <div id="ref-source-record" class="form-group" style="display:none;">
-        <div class="record-section">
+        <div id="mic-blocked" style="display:none;padding:0.75rem 1rem;background:var(--red-dim);border:1px solid rgba(214,48,49,0.3);border-radius:8px;font-size:0.78rem;line-height:1.6;color:var(--text);">
+          <strong style="color:var(--red);">El navegador bloquea el micrófono en conexiones HTTP.</strong><br>
+          Para habilitarlo en Chrome, accede a:<br>
+          <code style="font-size:0.72rem;background:var(--surface2);padding:1px 5px;border-radius:4px;">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code><br>
+          Añade <code id="mic-origin" style="font-size:0.72rem;background:var(--surface2);padding:1px 5px;border-radius:4px;"></code> y reinicia el navegador.<br>
+          <span style="color:var(--text-dim);">O sube un archivo de audio con la opción "Subir archivo".</span>
+        </div>
+        <div class="record-section" id="mic-record-ui">
           <div class="record-row">
             <button class="rec-btn" id="rec-btn" onclick="toggleRecording()">
               <span class="rec-dot"></span>
@@ -650,31 +657,37 @@ async function checkBackend() {
   } catch { document.getElementById('status-text').textContent = 'Sin conexión'; }
 }
 
-// ── Custom voices ─────────────────────────────────────────────────────────────
+// ── Custom voices (localStorage) ─────────────────────────────────────────────
+function getStoredVoices() {
+  try { return JSON.parse(localStorage.getItem('custom_voices') || '[]'); } catch { return []; }
+}
+function saveStoredVoices(voices) {
+  localStorage.setItem('custom_voices', JSON.stringify(voices));
+}
+
 async function loadVoices() {
-  try {
-    const r = await fetch('/api/voices');
-    if (!r.ok) return;
-    const data = await r.json();
-    const custom = data.uploaded_voices || [];
-    document.getElementById('custom-voices-count').textContent = custom.length ? `(${custom.length})` : '';
-    const listEl = document.getElementById('custom-voices-list');
-    if (!custom.length) {
-      listEl.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dimmer);padding:0.3rem 0.4rem;">Sin voces guardadas</div>';
-    } else {
-      listEl.innerHTML = custom.map(v => `
-        <button class="custom-voice-item${selectedVoice === v && usingCustomVoice ? ' active' : ''}"
-                id="cvbtn-${v}" onclick="selectCustomVoice('${v}')">
-          <span class="cv-dot"></span>
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v}</span>
-          <button class="cv-del" onclick="deleteVoice(event,'${v}')" title="Eliminar">&#10005;</button>
-        </button>`).join('');
-    }
-  } catch {}
+  const voices = getStoredVoices();
+  document.getElementById('custom-voices-count').textContent = voices.length ? `(${voices.length})` : '';
+  const listEl = document.getElementById('custom-voices-list');
+  if (!voices.length) {
+    listEl.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dimmer);padding:0.3rem 0.4rem;">Sin voces guardadas</div>';
+  } else {
+    listEl.innerHTML = voices.map(v => `
+      <button class="custom-voice-item${selectedVoice === v.name && usingCustomVoice ? ' active' : ''}"
+              id="cvbtn-${v.name}" onclick="selectCustomVoice('${v.name}')">
+        <span class="cv-dot"></span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.name}</span>
+        <button class="cv-del" onclick="deleteVoice(event,'${v.name}')" title="Eliminar">&#10005;</button>
+      </button>`).join('');
+  }
 }
 
 function selectCustomVoice(name) {
+  const voice = getStoredVoices().find(v => v.name === name);
+  if (!voice) return;
   selectedVoice = name; usingCustomVoice = true;
+  refAudioBase64 = voice.audio;
+  refAudioFilename = voice.filename || 'ref.wav';
   document.querySelectorAll('.lang-item, .custom-voice-item').forEach(el => el.classList.remove('active'));
   document.getElementById('cvbtn-' + name)?.classList.add('active');
   document.getElementById('voice-preview-name').textContent = name;
@@ -696,17 +709,28 @@ document.getElementById('speed').addEventListener('input', function() {
 });
 
 // ── Ref source toggle ─────────────────────────────────────────────────────────
+const MIC_AVAILABLE = !!(navigator.mediaDevices && window.isSecureContext);
+
 function setRefSource(src) {
   refSource = src;
   document.getElementById('ref-source-upload').style.display = src === 'upload' ? '' : 'none';
   document.getElementById('ref-source-record').style.display = src === 'record' ? '' : 'none';
+
+  if (src === 'record') {
+    const blocked = !MIC_AVAILABLE;
+    document.getElementById('mic-blocked').style.display   = blocked ? '' : 'none';
+    document.getElementById('mic-record-ui').style.display = blocked ? 'none' : '';
+    if (blocked) {
+      document.getElementById('mic-origin').textContent = window.location.origin;
+    }
+  }
+
   const upBtn  = document.getElementById('src-upload-btn');
   const recBtn = document.getElementById('src-record-btn');
   upBtn.style.borderColor  = src === 'upload' ? 'var(--accent)' : '';
   upBtn.style.color        = src === 'upload' ? 'var(--accent-hover)' : '';
   recBtn.style.borderColor = src === 'record' ? 'var(--accent)' : '';
   recBtn.style.color       = src === 'record' ? 'var(--accent-hover)' : '';
-  // clear the other source when switching
   if (src === 'upload') { stopRecording(false); refAudioBase64 = null; }
   if (src === 'record') { refAudioBase64 = null; document.getElementById('dz-filename').textContent = ''; }
 }
@@ -811,7 +835,7 @@ async function generate() {
 
   const fmt = document.getElementById('format').value;
   const body = {
-    text, voice: selectedVoice, format: fmt,
+    text, voice: usingCustomVoice ? 'casual_male' : selectedVoice, format: fmt,
     speed: parseFloat(document.getElementById('speed').value),
   };
 
@@ -857,24 +881,14 @@ async function saveVoice() {
 
   const statusEl = document.getElementById('save-voice-status');
   const btn = document.getElementById('save-voice-btn');
-  btn.disabled = true; statusEl.textContent = 'Subiendo...'; statusEl.className = 'status-bar';
-
-  const byteStr = atob(refAudioBase64);
-  const ab = new ArrayBuffer(byteStr.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
-  const blob = new Blob([ab], { type: 'audio/wav' });
-
-  const fd = new FormData();
-  fd.append('audio_sample', blob, refAudioFilename || 'ref.wav');
-  fd.append('name', name);
-  const refText = document.getElementById('ref-text').value.trim();
-  if (refText) fd.append('ref_text', refText);
+  btn.disabled = true; statusEl.textContent = 'Guardando...'; statusEl.className = 'status-bar';
 
   try {
-    const r = await fetch('/api/voices/upload', { method: 'POST', body: fd });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Error al subir');
+    const voices = getStoredVoices();
+    const idx = voices.findIndex(v => v.name === name);
+    const entry = { name, audio: refAudioBase64, filename: refAudioFilename || 'ref.wav' };
+    if (idx >= 0) voices[idx] = entry; else voices.push(entry);
+    saveStoredVoices(voices);
     statusEl.textContent = '';
     showToast(`Voz "${name}" guardada`, 'success');
     await loadVoices();
@@ -889,13 +903,11 @@ async function saveVoice() {
 async function deleteVoice(e, name) {
   e.stopPropagation();
   if (!confirm(`¿Eliminar la voz "${name}"?`)) return;
-  try {
-    const r = await fetch('/api/voices/' + encodeURIComponent(name), { method: 'DELETE' });
-    if (!r.ok) throw new Error('Error al eliminar');
-    if (selectedVoice === name) { usingCustomVoice = false; selectLang('casual'); }
-    showToast(`Voz "${name}" eliminada`);
-    await loadVoices();
-  } catch(e) { showToast(e.message, 'error'); }
+  const voices = getStoredVoices().filter(v => v.name !== name);
+  saveStoredVoices(voices);
+  if (selectedVoice === name) { usingCustomVoice = false; refAudioBase64 = null; selectLang('casual'); }
+  showToast(`Voz "${name}" eliminada`);
+  await loadVoices();
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────

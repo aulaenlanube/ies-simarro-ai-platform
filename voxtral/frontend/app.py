@@ -52,6 +52,8 @@ def synthesize():
 
     ref_audio = data.get("ref_audio")
     if ref_audio:
+        if not ref_audio.startswith(('http', 'data:', 'file://')):
+            ref_audio = f"data:audio/wav;base64,{ref_audio}"
         payload["ref_audio"] = ref_audio
         payload["task_type"] = "CustomVoice"
         ref_text = data.get("ref_text", "").strip()

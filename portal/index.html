@@ -256,6 +256,17 @@ header {
 .card--gpt  { --c-accent: #4f7ef7; }
 .card--tts  { --c-accent: #00b894; }
 .card--img  { --c-accent: #ff6b00; }
+.card--soon { --c-accent: #9aa0b2; pointer-events: none; opacity: 0.55; }
+.card--soon:hover { transform: none; box-shadow: var(--shadow-card); border-color: var(--glass-border); }
+
+.soon-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-secondary);
+  background: var(--surface2); border: 1px solid var(--glass-border);
+  padding: 2px 8px; border-radius: 20px;
+  width: fit-content;
+}
 
 .card-icon-wrap {
   width: 52px; height: 52px; border-radius: 16px;
@@ -453,11 +464,11 @@ footer a:hover { color: var(--accent); }
         </div>
       </a>
 
-      <a href="#" data-port="3100" target="_blank" class="card card--tts">
+      <a href="#" data-port="3101" target="_blank" class="card card--tts">
         <div class="card-icon-wrap">🎙️</div>
         <div>
           <div class="card-name" data-t="card.tts.name">Text a Àudio</div>
-          <div class="card-port">localhost:3100</div>
+          <div class="card-port">localhost:3101</div>
         </div>
         <p class="card-desc" data-t="card.tts.desc">Converteix text a veu amb Voxtral-4B-TTS. 20 veus en múltiples idiomes i clonació de veu.</p>
         <div class="card-footer">
@@ -488,6 +499,59 @@ footer a:hover { color: var(--accent); }
     </div>
   </div>
 
+  <!-- Coming soon -->
+  <div class="reveal">
+    <div class="section-title" data-t="section.soon">Pròximament</div>
+    <div class="cards-grid">
+
+      <div class="card card--soon">
+        <div class="card-icon-wrap">👩‍🏫</div>
+        <div>
+          <div class="card-name" data-t="card.inf.name">Assistent Professorat: Informàtica</div>
+          <div class="soon-badge">&#9679; <span data-t="soon.label">Pròximament</span></div>
+        </div>
+        <p class="card-desc" data-t="card.inf.desc">Assistent d'IA especialitzat per al departament d'Informàtica i Sistemes Microinformàtics.</p>
+        <div class="card-footer">
+          <div class="status">
+            <span class="dot"></span>
+            <span data-t="soon.status">En desenvolupament</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card--soon">
+        <div class="card-icon-wrap">🎓</div>
+        <div>
+          <div class="card-name" data-t="card.fp.name">Assistent Professorat: FP</div>
+          <div class="soon-badge">&#9679; <span data-t="soon.label">Pròximament</span></div>
+        </div>
+        <p class="card-desc" data-t="card.fp.desc">Assistent d'IA per a la Formació Professional, adaptat als cicles i mòduls del centre.</p>
+        <div class="card-footer">
+          <div class="status">
+            <span class="dot"></span>
+            <span data-t="soon.status">En desenvolupament</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card--soon">
+        <div class="card-icon-wrap">📐</div>
+        <div>
+          <div class="card-name" data-t="card.sec.name">Assistent Professorat: Secundària</div>
+          <div class="soon-badge">&#9679; <span data-t="soon.label">Pròximament</span></div>
+        </div>
+        <p class="card-desc" data-t="card.sec.desc">Assistent d'IA per al professorat d'ESO i Batxillerat, adaptat als currículums oficials.</p>
+        <div class="card-footer">
+          <div class="status">
+            <span class="dot"></span>
+            <span data-t="soon.status">En desenvolupament</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- PP1 -->
   <div class="reveal">
     <div class="section-title" data-t="section.project">Projecte</div>
@@ -514,8 +578,12 @@ footer a:hover { color: var(--accent); }
 
 <script>
 const HOST = window.location.hostname;
+// Port 3101 (Voxtral TTS) uses HTTPS for microphone access
+const PORT_PROTOCOL = { '3101': 'https' };
 document.querySelectorAll('[data-port]').forEach(el => {
-  el.href = `http://${HOST}:${el.getAttribute('data-port')}/`;
+  const port = el.getAttribute('data-port');
+  const proto = PORT_PROTOCOL[port] || 'http';
+  el.href = `${proto}://${HOST}:${port}/`;
 });
 
 const T = {
@@ -536,6 +604,15 @@ const T = {
     'section.project': 'Projecte',
     'pp1.title':       'Documentació del Projecte PP1',
     'pp1.sub':         'Seguiment, memòria tècnica i resultats del projecte de pràctiques professionals.',
+    'section.soon':    'Pròximament',
+    'card.inf.name':   'Assistent Professorat: Informàtica',
+    'card.inf.desc':   "Assistent d'IA especialitzat per al departament d'Informàtica i Sistemes Microinformàtics.",
+    'card.fp.name':    'Assistent Professorat: FP',
+    'card.fp.desc':    "Assistent d'IA per a la Formació Professional, adaptat als cicles i mòduls del centre.",
+    'card.sec.name':   'Assistent Professorat: Secundària',
+    'card.sec.desc':   "Assistent d'IA per al professorat d'ESO i Batxillerat, adaptat als currículums oficials.",
+    'soon.label':      'Pròximament',
+    'soon.status':     'En desenvolupament',
     'footer.text':     'IES Dr. Lluís Simarro · Ensenyament Públic · Xàtiva',
     'footer.pp1':      'Projecte PP1',
   },
@@ -556,6 +633,15 @@ const T = {
     'section.project': 'Proyecto',
     'pp1.title':       'Documentación del Proyecto PP1',
     'pp1.sub':         'Seguimiento, memoria técnica y resultados del proyecto de prácticas profesionales.',
+    'section.soon':    'Próximamente',
+    'card.inf.name':   'Asistente Profesorado: Informática',
+    'card.inf.desc':   'Asistente de IA especializado para el departamento de Informática y Sistemas Microinformáticos.',
+    'card.fp.name':    'Asistente Profesorado: FP',
+    'card.fp.desc':    'Asistente de IA para la Formación Profesional, adaptado a los ciclos y módulos del centro.',
+    'card.sec.name':   'Asistente Profesorado: Secundaria',
+    'card.sec.desc':   'Asistente de IA para el profesorado de ESO y Bachillerato, adaptado a los currículos oficiales.',
+    'soon.label':      'Próximamente',
+    'soon.status':     'En desarrollo',
     'footer.text':     'IES Dr. Lluís Simarro · Enseñanza Pública · Xàtiva',
     'footer.pp1':      'Proyecto PP1',
   }
@@ -602,7 +688,8 @@ async function checkPort(port) {
   try {
     const ctrl = new AbortController();
     setTimeout(() => ctrl.abort(), 4000);
-    await fetch(`http://${HOST}:${port}/`, { signal: ctrl.signal, mode: 'no-cors' });
+    const proto = PORT_PROTOCOL[port] || 'http';
+    await fetch(`${proto}://${HOST}:${port}/`, { signal: ctrl.signal, mode: 'no-cors' });
     dot.className = 'dot online';
     txt.dataset.state = 'online';
     txt.textContent = T[lang]['st.online'];
