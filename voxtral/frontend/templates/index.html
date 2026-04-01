@@ -45,6 +45,11 @@
     gap: 1rem;
     flex-shrink: 0;
   }
+  .header-logo {
+    height: 36px; width: auto; flex-shrink: 0;
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
+  }
   .header-titles h1 {
     font-size: 0.95rem;
     font-weight: 700;
@@ -171,20 +176,20 @@
   .custom-voice-item {
     display: flex; align-items: center; gap: 0.55rem;
     padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer;
-    border: none; background: transparent; color: var(--text-dim);
-    font-size: 0.78rem; width: 100%; text-align: left;
+    background: transparent; color: var(--text-dim);
+    font-size: 0.78rem; width: 100%; user-select: none;
     transition: background 0.12s, color 0.12s;
   }
   .custom-voice-item:hover { background: var(--surface2); color: var(--text); }
   .custom-voice-item.active { background: var(--green-dim); color: var(--text); font-weight: 600; }
   .cv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
   .cv-del {
-    margin-left: auto; padding: 1px 4px; font-size: 0.65rem;
-    background: transparent; border: none; color: transparent; cursor: pointer;
-    border-radius: 3px; transition: color 0.12s;
+    margin-left: auto; padding: 4px 5px; display: flex; align-items: center;
+    background: transparent; border: none; color: var(--text-dimmer); cursor: pointer;
+    border-radius: 5px; transition: background 0.15s, color 0.15s; flex-shrink: 0;
   }
-  .custom-voice-item:hover .cv-del { color: var(--text-dimmer); }
-  .cv-del:hover { color: var(--red) !important; }
+  .cv-del:hover { background: var(--red-dim); color: var(--red) !important; }
+  .cv-del svg { pointer-events: none; }
 
   /* ── Main area ── */
   .main-scroll {
@@ -364,6 +369,30 @@
     to   { opacity:1; transform:translateX(0); }
   }
 
+  /* ── Confirm modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  .modal-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 2rem 1.75rem 1.5rem;
+    width: min(340px, 90vw); display: flex; flex-direction: column;
+    align-items: center; gap: 0.6rem;
+    animation: slideUp 0.18s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
+  .modal-icon { color: var(--red); margin-bottom: 0.25rem; }
+  .modal-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+  .modal-msg { font-size: 0.82rem; color: var(--text-dim); text-align: center; line-height: 1.5; margin-bottom: 0.5rem; }
+  .modal-actions { display: flex; gap: 0.6rem; width: 100%; margin-top: 0.25rem; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+  #modal-confirm-btn { background: var(--red); color: #fff; border-color: var(--red); }
+  #modal-confirm-btn:hover { background: #c0392b; border-color: #c0392b; }
+
   /* ── Footer ── */
   footer {
     background: var(--surface); border-top: 1px solid var(--border);
@@ -384,6 +413,8 @@
 
 <!-- ── Header ── -->
 <header>
+  <img src="/static/logo-simarro.webp" alt="IES Dr. Lluís Simarro" class="header-logo">
+  <div class="header-sep"></div>
   <div class="header-titles">
     <h1>Generador de texto a audio con IA</h1>
     <span class="institute">IES Dr. Lluís Simarro &mdash; Centro de excelencia en IA y Big Data</span>
@@ -567,6 +598,24 @@
 
 <div id="toast-container"></div>
 
+<!-- ── Confirm modal ── -->
+<div id="confirm-modal" class="modal-overlay" style="display:none;" onclick="modalCancel(event)">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+      </svg>
+    </div>
+    <div class="modal-title">Eliminar voz</div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="modalCancel()">Cancelar</button>
+      <button class="btn" id="modal-confirm-btn" onclick="modalConfirm()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Languages ─────────────────────────────────────────────────────────────────
 const LANGUAGES = [
@@ -673,12 +722,16 @@ async function loadVoices() {
     listEl.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dimmer);padding:0.3rem 0.4rem;">Sin voces guardadas</div>';
   } else {
     listEl.innerHTML = voices.map(v => `
-      <button class="custom-voice-item${selectedVoice === v.name && usingCustomVoice ? ' active' : ''}"
-              id="cvbtn-${v.name}" onclick="selectCustomVoice('${v.name}')">
+      <div class="custom-voice-item${selectedVoice === v.name && usingCustomVoice ? ' active' : ''}"
+           id="cvbtn-${v.name}" onclick="selectCustomVoice('${v.name}')">
         <span class="cv-dot"></span>
         <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.name}</span>
-        <button class="cv-del" onclick="deleteVoice(event,'${v.name}')" title="Eliminar">&#10005;</button>
-      </button>`).join('');
+        <button class="cv-del" onclick="deleteVoice(event,'${v.name}')" title="Eliminar voz">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      </div>`).join('');
   }
 }
 
@@ -900,9 +953,27 @@ async function saveVoice() {
 }
 
 // ── Delete voice ──────────────────────────────────────────────────────────────
+let _pendingDeleteName = null;
+
 async function deleteVoice(e, name) {
   e.stopPropagation();
-  if (!confirm(`¿Eliminar la voz "${name}"?`)) return;
+  _pendingDeleteName = name;
+  document.getElementById('modal-msg').textContent = `¿Seguro que quieres eliminar la voz "${name}"? Esta acción no se puede deshacer.`;
+  const modal = document.getElementById('confirm-modal');
+  modal.style.display = 'flex';
+}
+
+function modalCancel(e) {
+  if (e && e.target !== document.getElementById('confirm-modal')) return;
+  document.getElementById('confirm-modal').style.display = 'none';
+  _pendingDeleteName = null;
+}
+
+async function modalConfirm() {
+  const name = _pendingDeleteName;
+  document.getElementById('confirm-modal').style.display = 'none';
+  _pendingDeleteName = null;
+  if (!name) return;
   const voices = getStoredVoices().filter(v => v.name !== name);
   saveStoredVoices(voices);
   if (selectedVoice === name) { usingCustomVoice = false; refAudioBase64 = null; selectLang('casual'); }
@@ -926,6 +997,10 @@ document.getElementById('text').addEventListener('keydown', e => {
 // Init upload source as active
 setRefSource('upload');
 init();
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { document.getElementById('confirm-modal').style.display = 'none'; _pendingDeleteName = null; }
+});
 </script>
 </body>
 </html>
